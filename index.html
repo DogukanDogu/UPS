@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#10192a" />
+  <meta name="description" content="UPS ve taşınabilir güç istasyonları için Watt, akü kapasitesi ve hedef süre hesaplayıcısı." />
+  <title>UPS Çalışma Süresi ve Batarya Kapasitesi Hesaplayıcı</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1220; --panel:#141e30; --panel2:#19253a; --line:#2b3c56; --text:#f2f6fd; --muted:#aabbd0; --accent:#65dcbd; --blue:#80b5ff; --warn:#ffd17d; --red:#ff9b9b; --radius:18px; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background:radial-gradient(circle at 90% 0%, #173044 0, transparent 35%), var(--bg); color:var(--text); line-height:1.55; }
+    a { color:var(--blue); }
+    button, input, select { font:inherit; }
+    button { cursor:pointer; }
+    .wrap { width:min(1120px, calc(100% - 36px)); margin:0 auto; }
+    header { padding:48px 0 32px; }
+    .eyebrow { display:inline-flex; color:var(--accent); font-weight:800; font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { margin:12px 0; font-size:clamp(2rem, 5vw, 3.45rem); line-height:1.13; letter-spacing:-.04em; }
+    h2 { font-size:1.35rem; letter-spacing:-.02em; margin:0 0 12px; }
+    h3 { font-size:1.04rem; margin:0 0 8px; }
+    p { margin:0 0 12px; }
+    .lead { color:var(--muted); max-width:760px; font-size:1.06rem; }
+    .tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+    .tag { border:1px solid var(--line); border-radius:100px; padding:5px 11px; color:#c5d5ea; font-size:.8rem; }
+    main { padding-bottom:48px; }
+    .panel { background:rgba(20,30,48,.96); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow:0 14px 40px rgba(0,0,0,.11); }
+    .grid { display:grid; grid-template-columns:1.04fr .96fr; gap:18px; align-items:start; }
+    .section-space { margin-top:20px; }
+    .row { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .field { margin:16px 0; }
+    .field label { display:block; font-weight:700; margin-bottom:7px; }
+    .hint, small, .muted { color:var(--muted); }
+    .hint { font-size:.83rem; margin-top:6px; }
+    input[type="number"], select { width:100%; padding:12px 13px; color:var(--text); border:1px solid #41546e; border-radius:11px; background:#0e1828; outline:none; }
+    input:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(101,220,189,.13); }
+    input[type="range"] { width:100%; accent-color:var(--accent); }
+    .device-list { display:grid; gap:10px; margin:15px 0 10px; }
+    .device-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(105px,.8fr) auto; gap:10px; align-items:end; background:#0e192a; border:1px solid var(--line); padding:12px; border-radius:12px; }
+    .device-row .field { margin:0; min-width:0; }
+    .device-row .field label { font-size:.83rem; margin-bottom:5px; }
+    input[type="text"] { width:100%; padding:12px 13px; color:var(--text); border:1px solid #41546e; border-radius:11px; background:#0e1828; outline:none; }
+    .remove-device { padding:11px 12px; background:transparent; border:1px solid #795262; color:#ffc8cd; border-radius:10px; font-weight:700; }
+    .remove-device:hover { background:#4e3035; }
+    .device-total { display:flex; justify-content:space-between; gap:10px; padding:11px 2px; border-top:1px solid var(--line); font-weight:700; }
+    .device-total strong { color:var(--accent); }
+    .input-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+    .range-line { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:6px 0 0; }
+    .range-line strong { color:var(--accent); }
+    .pill { padding:5px 10px; font-size:.78rem; font-weight:800; border-radius:20px; background:#24483f; color:#8bf3d4; }
+    .pill.warn { background:#4b3925; color:var(--warn); }
+    .pill.danger { background:#4e3035; color:var(--red); }
+    .metrics { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; margin-top:17px; }
+    .metric { border-radius:14px; background:#0e192a; border:1px solid var(--line); padding:17px; }
+    .metric .name { color:var(--muted); font-size:.83rem; }
+    .metric .value { margin:4px 0 0; font-weight:800; line-height:1.2; font-size:clamp(1.25rem, 3vw, 2rem); letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+    .metric .sub { font-size:.78rem; color:var(--muted); margin-top:5px; }
+    .verdict { border:1px solid #365c58; background:linear-gradient(115deg,#163a38,#172b37); padding:16px; border-radius:13px; margin-top:16px; }
+    .verdict.warning { border-color:#79613b; background:linear-gradient(115deg,#3a2f22,#292b33); }
+    .verdict h3 { margin-bottom:4px; }
+    .note { background:#13283a; border-left:3px solid var(--blue); padding:13px 15px; border-radius:0 10px 10px 0; color:#cce0f7; margin-top:14px; font-size:.9rem; }
+    .section-title { margin:31px 0 13px; }
+    .comparison { display:grid; gap:12px; }
+    .compare-card { padding:17px 18px; background:var(--panel); border:1px solid var(--line); border-radius:14px; }
+    .compare-card .row { align-items:baseline; }
+    .compare-name { font-weight:800; }
+    .bar { height:11px; background:#0a1320; border-radius:99px; overflow:hidden; margin:13px 0 7px; }
+    .bar > div { height:100%; background:linear-gradient(90deg,#4c94dd,var(--accent)); width:0; border-radius:99px; transition:width .2s ease; }
+    .compare-time { font-weight:850; color:var(--accent); white-space:nowrap; }
+    .compare-foot { display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-size:.82rem; }
+    .text-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .text-grid article { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:21px; }
+    ul { padding-left:20px; margin:8px 0 0; }
+    li { margin:7px 0; }
+    table { border-collapse:collapse; width:100%; font-size:.93rem; }
+    td,th { padding:10px 8px; text-align:left; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); font-weight:700; }
+    td:last-child,th:last-child { text-align:right; }
+    code { background:#0d1827; border:1px solid var(--line); padding:2px 6px; border-radius:5px; }
+    details { border-top:1px solid var(--line); padding:14px 0; }
+    summary { cursor:pointer; font-weight:750; }
+    details p { margin:12px 0 0; color:var(--muted); }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:15px; }
+    .btn { border-radius:10px; padding:10px 14px; background:var(--accent); color:#05201c; border:1px solid transparent; font-weight:800; }
+    .btn.secondary { background:transparent; color:var(--text); border-color:#516681; }
+    .footer { font-size:.82rem; color:var(--muted); border-top:1px solid var(--line); padding:24px 0 40px; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (max-width:800px) { header { padding-top:34px; } .grid,.text-grid { grid-template-columns:1fr; } .panel { padding:19px; } }
+    @media (max-width:550px) { .device-row { grid-template-columns:minmax(0,1fr) minmax(90px,.6fr); } .remove-device { grid-column:1/-1; } }
+    @media (max-width:440px) { .input-grid,.metrics { grid-template-columns:1fr; } .wrap { width:min(100% - 22px, 1120px); } }
+    @media print { body { background:white; color:#111; } .panel,.text-grid article,.compare-card { background:white; color:#111; box-shadow:none; border-color:#ccc; } .muted,.hint,small,.metric .name,.metric .sub { color:#444; } .metric,.verdict { background:#eee; color:#111; } .metric .value,.compare-time { color:#111; } .btn { display:none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="eyebrow">Enerji planlama aracı</span>
+      <h1>UPS Çalışma Süresi<br>Hesaplayıcı</h1>
+      <p class="lead">Cihazlarının güç tüketimini <strong>Watt (W)</strong> cinsinden gir, elektrik kesildiğinde ne kadar çalışabileceklerini ve hedeflediğin süre için yaklaşık kaç <strong>Wh</strong> batarya kapasitesine ihtiyaç duyduğunu öğren.</p>
+      <div class="tags"><span class="tag">Watt (W)</span><span class="tag">Batarya kapasitesi (Wh)</span><span class="tag">Çalışma süresi</span><span class="tag">UPS ve güç istasyonları</span></div>
+    </header>
+    <main>
+      <section class="grid" aria-label="Etkileşimli hesaplayıcı">
+        <div class="panel">
+          <div class="row"><h2>1. Cihazlarını ve hedefini gir</h2><span class="pill">Canlı hesaplama</span></div>
+          <p class="muted">Bağlayacağın cihazları tek tek ekle. Her cihazın adını ve tüketimini Watt (W) cinsinden yaz; toplam güç otomatik hesaplanır.</p>
+          <div id="deviceList" class="device-list" aria-label="Cihaz listesi"></div>
+          <button class="btn secondary" id="addDevice" type="button">+ Cihaz ekle</button>
+          <div class="device-total"><span>Listedeki cihazlar: <span id="deviceCount">1</span></span><strong id="deviceTotal">0 W</strong></div>
+          <div class="field"><label for="target">Hedef kesinti süresi (saat)</label><input id="target" type="number" min="0.1" max="240" step="0.5" value="4"/><div class="hint">Örnek: 2 saatlik yedekleme için 2 yaz.</div></div>
+          <h3 class="section-space">2. UPS / batarya bilgilerini gir</h3>
+          <div class="input-grid">
+            <div class="field"><label for="capacity">Nominal batarya kapasitesi (Wh)</label><input id="capacity" type="number" min="1" max="100000" step="1" value="300" /></div>
+            <div class="field"><label for="powerLimit">UPS çıkış limiti (W)</label><input id="powerLimit" type="number" min="1" max="100000" step="1" value="500"/><div class="hint">Yalnızca çıkış gücü yeterliliğini kontrol eder.</div></div>
+          </div>
+          <div class="field"><div class="range-line"><label for="usable">Aküden kullanılabilir oran</label><strong id="usableLabel">85%</strong></div><input type="range" id="usable" min="20" max="100" step="1" value="85"/><div class="hint">Kurşun-asit aküde yüksek deşarj hızı ve kayıplar nedeniyle daha düşük; LiFePO₄ için genellikle daha yüksek.</div></div>
+          <div class="field"><div class="range-line"><label for="efficiency">AC dönüşüm verimi</label><strong id="efficiencyLabel">85%</strong></div><input type="range" id="efficiency" min="50" max="98" step="1" value="85"/><div class="hint">İnverterin dönüşüm kaybını temsil eder.</div></div>
+          <div class="field"><div class="range-line"><label for="idle">UPS'in kendi tüketimi</label><strong id="idleLabel">8 W</strong></div><input type="range" id="idle" min="0" max="30" step="1" value="8"/><div class="hint">Modelin çalışma moduna göre değişir; özellikle düşük cihaz yüklerinde önemlidir.</div></div>
+          <div class="actions"><button class="btn secondary" id="reset" type="button">Varsayılan değerlere dön</button><button class="btn secondary" id="print" type="button">Yazdır / PDF olarak kaydet</button></div>
+        </div>
+        <div class="panel" aria-live="polite">
+          <div class="row"><h2>Hesaplama sonucu</h2><span id="statusPill" class="pill">Hedef karşılanıyor</span></div>
+          <div class="metrics">
+            <div class="metric"><div class="name">Toplam cihaz yükü</div><div id="totalW" class="value">33 W</div><div class="sub">UPS'e bağlı cihazlar</div></div>
+            <div class="metric"><div class="name">Tahmini çalışma süresi</div><div id="runtime" class="value">5 sa 11 dk</div><div class="sub">Girilen kapasite ve varsayımlara göre</div></div>
+            <div class="metric"><div class="name">Hedef için asgari kapasite</div><div id="minWh" class="value">227 Wh</div><div class="sub">Seçilen verim ve kullanım oranıyla</div></div>
+            <div class="metric"><div class="name">%25 güvenlik payıyla</div><div id="recommendedWh" class="value">284 Wh</div><div class="sub">Önerilen nominal kapasite</div></div>
+          </div>
+          <div id="verdict" class="verdict"><h3>Hedef süre hesapta karşılanıyor</h3><p>Sonuçlar, girdiğin kapasite ve verim varsayımlarına göre güncellenir.</p></div>
+          <div id="powerWarning" class="note" hidden></div>
+          <div class="note"><strong>Önemli:</strong> Bunlar garanti edilen çalışma süreleri değil, ayarlanabilir varsayımlarla yapılan yaklaşık hesaplamalardır. Kesintisiz çalışma için cihaz/UPS uyumluluğu, geçiş süresi, akü yaşı ve gerçek tüketim de önemlidir.</div>
+          <div class="section-space"><h3>Formül ve ara değerler</h3><p class="muted" id="formula">Kullanılabilir AC enerji = nominal Wh × kullanılabilir oran × inverter verimi. Süre = kullanılabilir AC enerji / (cihaz yükü + UPS kendi tüketimi).</p></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="factsHeading">
+        <h2 class="section-title" id="factsHeading">Bilmen gereken teknik bilgiler</h2>
+        <p class="muted">UPS ve batarya seçmeye yeni başlıyorsan, aşağıdaki açıklamalar hesaplayıcıdaki değerlerin ne anlama geldiğini anlamana yardımcı olur.</p>
+        <div class="text-grid">
+          <article>
+            <h3>UPS nedir, ne işe yarar?</h3>
+            <p><strong>UPS (kesintisiz güç kaynağı)</strong>, elektrik kesildiğinde bağlı cihazlara bataryasından kısa veya uzun süre enerji sağlayan sistemdir. Bazı modeller, elektrik dalgalanmalarına karşı da koruma sunar.</p>
+            <p>UPS'in <strong>çıkış gücü</strong> aynı anda kaç wattlık cihaz çalıştırabileceğini, <strong>batarya kapasitesi</strong> ise yaklaşık ne kadar süre çalıştırabileceğini belirler.</p>
+          </article>
+          <article>
+            <h3>W, Wh, VA, V ve Ah ne demek?</h3>
+            <ul>
+              <li><strong>W (Watt):</strong> Cihazın tükettiği anlık güç. Örneğin 50 W.</li>
+              <li><strong>Wh (Watt-saat):</strong> Enerji miktarı. 50 W tüketen bir cihaz 2 saatte teorik olarak 100 Wh harcar.</li>
+              <li><strong>VA:</strong> UPS'in görünür güç değeri. W ile aynı değildir; ürünün watt sınırına da bakmalısın.</li>
+              <li><strong>V (Volt):</strong> Elektrik gerilimi.</li>
+              <li><strong>Ah (Amper-saat):</strong> Bataryanın elektrik yükü kapasitesi. Yaklaşık enerji için voltla çarpılır.</li>
+            </ul>
+            <p><code>12 V × 20 Ah = 240 Wh</code> nominal batarya enerjisi. Bunun tamamı prize aktarılamayabilir.</p>
+          </article>
+          <article>
+            <h3>Cihazların watt değerini nasıl bulabilirsin?</h3>
+            <p>Ürünün etiketine veya teknik özelliklerine bak. Adaptörün üzerinde yalnızca volt ve amper yazıyorsa <strong>V × A = W</strong> ile adaptörün en yüksek çıkış gücünü hesaplayabilirsin.</p>
+            <p><strong>Önemli:</strong> Adaptör üzerinde yazan en yüksek güç, cihazın sürekli tüketimi olmayabilir. Daha doğru hesap için priz tipi bir wattmetreyle gerçek kullanımdaki tüketimi ölç.</p>
+          </article>
+          <article>
+            <h3>Çalışma süresi nasıl hesaplanır?</h3>
+            <p>Önce bağlanacak cihazların watt değerlerini topla. Sonra bataryanın kullanılabilir enerjisini, enerji dönüşüm kaybını ve UPS'in kendi tüketimini dikkate al.</p>
+            <p><code>Süre (saat) ≈ [Batarya Wh × kullanılabilir oran × verim] ÷ [Cihazların W toplamı + UPS tüketimi]</code></p>
+            <p>Örneğin 40 W cihaz yükü, 8 W UPS tüketimi, 300 Wh batarya, %85 kullanılabilir oran ve %85 verim ile yaklaşık <strong>4,5 saat</strong> hesaplanır. Bu yalnızca örnektir.</p>
+          </article>
+          <article>
+            <h3>Hedef süre için hangi batarya kapasitesi gerekir?</h3>
+            <p>Önce hedeflediğin saat sayısını gir. Hesaplayıcı, güç tüketimi ve verim varsayımlarından hareketle yaklaşık <strong>asgari Wh</strong> değerini gösterir. Sonuçta ayrıca <strong>%25 güvenlik payı</strong> sunulur.</p>
+            <p>Bataryalar eskidikçe kapasiteleri azalabilir. Ayrıca çok düşük veya çok yüksek yüklerde verim farklılaşabilir. Bu nedenle hesaplanan değer satın alma garantisi değil, ilk seçim ölçütüdür.</p>
+          </article>
+          <article>
+            <h3>UPS türleri ve çıkış özellikleri</h3>
+            <ul>
+              <li><strong>Offline / Standby:</strong> Elektrik kesildiğinde bataryaya geçer; geçişte kısa bir gecikme olabilir.</li>
+              <li><strong>Line-Interactive:</strong> Şebeke gerilimi dalgalanmalarını belli ölçüde düzenleyebilir; bataryaya geçiş süresi vardır.</li>
+              <li><strong>Online (çift dönüşümlü):</strong> Genellikle çıkışın sürekliliğini daha iyi korur; maliyet ve kendi tüketimi daha yüksek olabilir.</li>
+              <li><strong>Tam sinüs / simüle sinüs:</strong> Çıkış dalga biçimini anlatır. Hassas veya uyumluluğu belirsiz cihazlar için tam sinüs tercih edilebilir.</li>
+            </ul>
+          </article>
+          <article>
+            <h3>Batarya türleri arasındaki temel fark</h3>
+            <p><strong>Kurşun-asit</strong> aküler yaygındır ancak hızlı deşarjda kullanılabilir enerji ciddi biçimde azalabilir. <strong>LiFePO₄</strong> bataryalar ise genellikle daha yüksek çevrim ömrü sunar; yine de ürünün teknik sınırları belirleyicidir.</p>
+            <p>Yalnızca Ah değerine göre seçim yapma. Karşılaştırırken <strong>Wh kapasitesini</strong>, belirtilen yükte ölçülmüş çalışma süresini ve garanti koşullarını birlikte incele.</p>
+          </article>
+          <article>
+            <h3>Elektrik kesintisinde nelere dikkat edilmeli?</h3>
+            <ul>
+              <li><strong>Geçiş süresi:</strong> Bataryaya geçerken bazı cihazlar kapanıp yeniden başlayabilir.</li>
+              <li><strong>Güç sınırı:</strong> Bağlı cihazların toplam W değeri UPS'in çıkış sınırını aşmamalı.</li>
+              <li><strong>Batarya durumu:</strong> Eskimiş veya soğuk/sıcak ortamda çalışan bataryanın süresi kısalabilir.</li>
+              <li><strong>Altyapı:</strong> UPS modemi çalıştırsa bile internet sağlayıcının saha ekipmanları kapanırsa bağlantı kesilebilir.</li>
+              <li><strong>Güvenlik:</strong> Havalandırma, topraklama ve priz kullanımı için üretici yönergelerine uy.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel section-space" aria-labelledby="qaHeading">
+        <h2 id="qaHeading">Sık sorulan sorular</h2>
+        <details open><summary>Daha yüksek VA değeri daha uzun çalışma süresi demek mi?</summary><p>Hayır. VA ve W, cihazın sağlayabildiği gücü ifade eder. Süreyi esas olarak bataryanın Wh kapasitesi, bağlı yük ve sistem kayıpları belirler.</p></details>
+        <details><summary>Bataryamda Ah yazıyor, Wh değerini nasıl bulurum?</summary><p>Nominal batarya voltajını Ah değeriyle çarp: örneğin 12 V × 20 Ah = 240 Wh. Bu yaklaşık nominal enerjidir; çıkıştan kullanılabilen miktar daha düşük olabilir. Birden fazla batarya varsa bağlantı şekline göre toplam enerji hesaplanır.</p></details>
+        <details><summary>Neden bataryadaki tüm Wh değerini kullanamıyorum?</summary><p>Enerji dönüşümünde kayıplar olur. UPS'in kendisi de güç harcar; akü kimyası, deşarj hızı ve yaş gibi etkenler kullanılabilir enerjiyi azaltabilir.</p></details>
+        <details><summary>Watt değerini bilmiyorsam ne yapmalıyım?</summary><p>Cihazın üretici sayfasına ve enerji etiketine bakabilirsin. Adaptörün en yüksek çıkış değeri fikir verir ama gerçek güç tüketimi için wattmetreyle ölçüm daha güvenilirdir.</p></details>
+        <details><summary>Hesaplayıcının sonucu kesin mi?</summary><p>Hayır. Bu bir yaklaşık planlama hesabıdır. Satın almadan önce ilgili UPS'in belirli watt yükünde üretici tarafından açıklanmış çalışma süresini kontrol etmek ve kritik kullanımda gerçek sistemle deneme yapmak gerekir.</p></details>
+      </section>
+    </main>
+    <footer class="footer">Bu araç bilgilendirme ve ön boyutlandırma amaçlıdır; ölçülmüş üretici çalışma süresi ya da kesintisiz çalışma garantisi vermez. Gerçek yükü priz tipi wattmetreyle ölçmek en doğru yaklaşımdır. Hesaplar cihazınızda çalışır; veri bir sunucuya gönderilmez.</footer>
+  </div>
+  <script>
+  (() => {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const ids = ['target','capacity','powerLimit','usable','efficiency','idle'];
+    const fmt = (n, digits=0) => new Intl.NumberFormat('tr-TR',{maximumFractionDigits:digits}).format(n);
+    const val = (id, min=0) => { const n=Number($(id).value); return Number.isFinite(n) ? Math.max(min,n) : min; };
+    const displayTime = hours => !Number.isFinite(hours) ? '—' : hours >= 24 ? `${fmt(hours,1)} saat` : `${Math.floor(hours)} sa ${Math.round((hours%1)*60)} dk`;
+    const timeLabel = hours => !Number.isFinite(hours) ? '—' : hours < 1 ? `${Math.round(hours*60)} dk` : displayTime(hours);
+    function calculate(wh, usable, efficiency, idle, load) {
+      const acEnergy = wh * usable/100 * efficiency/100;
+      const draw = load + idle;
+      return {acEnergy, draw, hours:draw>0 ? acEnergy/draw : Infinity};
+    }
+    let nextDeviceId = 0;
+    function addDevice(name='', watts='') {
+      const id = ++nextDeviceId;
+      const row = document.createElement('div'); row.className='device-row'; row.dataset.deviceId=String(id);
+      const nameWrap=document.createElement('div'); nameWrap.className='field';
+      const nameLabel=document.createElement('label'); nameLabel.htmlFor=`deviceName${id}`; nameLabel.textContent='Cihaz adı';
+      const nameInput=document.createElement('input'); nameInput.type='text'; nameInput.id=`deviceName${id}`; nameInput.className='device-name'; nameInput.placeholder='Ör. monitör'; nameInput.maxLength=80; nameInput.value=name;
+      nameWrap.append(nameLabel,nameInput);
+      const wattsWrap=document.createElement('div'); wattsWrap.className='field';
+      const wattsLabel=document.createElement('label'); wattsLabel.htmlFor=`deviceWatts${id}`; wattsLabel.textContent='Güç (W)';
+      const wattsInput=document.createElement('input'); wattsInput.type='number'; wattsInput.id=`deviceWatts${id}`; wattsInput.className='device-watts'; wattsInput.min='0'; wattsInput.max='100000'; wattsInput.step='0.5'; wattsInput.placeholder='0'; wattsInput.value=watts;
+      wattsWrap.append(wattsLabel,wattsInput);
+      const remove=document.createElement('button'); remove.type='button'; remove.className='remove-device'; remove.textContent='Sil'; remove.setAttribute('aria-label', `${name || 'Cihaz'} satırını sil`);
+      remove.addEventListener('click',()=>{ row.remove(); update(); });
+      wattsInput.addEventListener('input',update);
+      row.append(nameWrap,wattsWrap,remove);
+      $('deviceList').append(row);
+      update();
+    }
+    function getTotalLoad() {
+      return [...document.querySelectorAll('.device-watts')].reduce((sum,input)=> {
+        const n=Number(input.value); return sum+(Number.isFinite(n)&&n>0?n:0);
+      },0);
+    }
+    function update() {
+      const load=getTotalLoad();
+      const count=document.querySelectorAll('.device-row').length;
+      $('deviceCount').textContent=String(count);
+      $('deviceTotal').textContent=fmt(load,1)+' W';
+      const target=val('target',.1), wh=val('capacity',1), limit=val('powerLimit',1);
+      const usable=val('usable',1), efficiency=val('efficiency',1), idle=val('idle');
+      $('usableLabel').textContent=usable+'%'; $('efficiencyLabel').textContent=efficiency+'%'; $('idleLabel').textContent=fmt(idle)+' W';
+      const result=calculate(wh,usable,efficiency,idle,load);
+      const minCap=(load+idle)*target / ((usable/100)*(efficiency/100));
+      const recommended=minCap*1.25;
+      const allowed=load<=limit;
+      const enough=allowed && load>0 && result.hours>=target;
+      $('totalW').textContent=fmt(load,1)+' W'; $('runtime').textContent=timeLabel(result.hours);
+      $('minWh').textContent=fmt(Math.ceil(minCap))+' Wh'; $('recommendedWh').textContent=fmt(Math.ceil(recommended))+' Wh';
+      const status=$('statusPill'); status.className='pill '+(enough?'':'danger'); status.textContent=enough?'Hedef karşılanıyor':'Hedefin altında';
+      const verdict=$('verdict'); verdict.className='verdict '+(enough?'':'warning');
+      verdict.replaceChildren();
+      const title=document.createElement('h3'); title.textContent=enough?'Hedef süre hesapta karşılanıyor':'Hedef süre hesapta karşılanmıyor';
+      const explanation=document.createElement('p'); explanation.textContent = load===0 ? 'Hesaplama için en az bir cihazın güç tüketimini gir.' : !allowed ? `Cihaz yükü (${fmt(load,1)} W), seçilen güç kaynağının ${fmt(limit)} W çıkış limitini aşıyor.` : `Tahmini süre ${timeLabel(result.hours)}; hedefin ${fmt(target,1)} saat. ${enough?'Gerçek kullanımda daha fazla güvenlik payı önerilir.':'Daha yüksek batarya kapasitesi veya daha düşük yük gerekli.'}`;
+      verdict.append(title,explanation);
+      const warning=$('powerWarning'); warning.hidden=allowed; warning.textContent=allowed?'':`Uyarı: ${fmt(load,1)} W toplam yük, ${fmt(limit)} W çıkış gücünü aşıyor. Bu sistem kullanılmamalıdır.`;
+      $('formula').textContent=`${fmt(wh)} Wh × %${usable} × %${efficiency} = ${fmt(result.acEnergy,1)} Wh tahmini AC enerji. ${fmt(result.acEnergy,1)} Wh ÷ (${fmt(load,1)} W cihaz + ${fmt(idle)} W kendi tüketimi) = ${fmt(result.hours,2)} saat. İhtiyaç: (${fmt(load,1)} + ${fmt(idle)}) × ${fmt(target,1)} ÷ (${fmt(usable/100,2)} × ${fmt(efficiency/100,2)}) = ${fmt(minCap,1)} Wh.`;
+    }
+    for (const id of ids) $(id).addEventListener('input', update);
+    $('addDevice').addEventListener('click',()=>{ addDevice('',''); const names=document.querySelectorAll('.device-name'); names[names.length-1].focus(); });
+    $('reset').addEventListener('click',()=>{ $('deviceList').replaceChildren(); addDevice('Cihaz 1','40');$('target').value=4;$('capacity').value=300;$('powerLimit').value=500;$('usable').value=85;$('efficiency').value=85;$('idle').value=8;update(); });
+    $('print').addEventListener('click',()=>window.print());
+    addDevice('Cihaz 1','40');
+  })();
+  </script>
+</body>
+</html>
